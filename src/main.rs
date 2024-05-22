@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use rdev::{listen, Event, EventType, Key};
 use std::env;
 use std::fs::create_dir_all;
+use std::path::{Path, PathBuf};
 use xcap::Monitor;
 
 const DEFAULT_WORK_DIR: &str = "Default";
@@ -40,14 +41,18 @@ fn main() {
         .unwrap_or(&DEFAULT_WORK_DIR.to_string())
         .to_string();
 
-    let _ = init_path(&screenshots_dir);
-
-    let mut pressed: CombAppleBoardPress = CombAppleBoardPress::new();
-
-    if let Err(error) = listen(move |e| {
-        handle_print_screen(e, &screenshots_dir, &mut pressed);
-    }) {
-        println!("Ошибка: {:?}", error);
+    match init_path(&screenshots_dir) {
+        Ok(path) => {
+            let mut pressed: CombAppleBoardPress = CombAppleBoardPress::new();
+            if let Err(error) = listen(move |e| {
+                handle_print_screen(e, &path, &mut pressed);
+            }) {
+                println!("Ошибка: {:?}", error);
+            }
+        }
+        Err(e) => {
+            println!("Не удалось инициализировать путь: {:?}", e);
+        }
     }
 }
 
@@ -59,17 +64,17 @@ fn hello() {
     );
 }
 
-fn init_path(dir: &String) -> std::io::Result<()> {
+fn init_path(dir: &str) -> std::io::Result<PathBuf> {
     // Получение текущего рабочего каталога
-    let mut path = env::current_dir().unwrap();
+    let mut path = env::current_dir()?;
     path.push(dir);
 
-    create_dir_all(path)?;
-    Ok(())
+    create_dir_all(&path)?;
+    Ok(path)
 }
 
 // MetaLeft и MetaRight в сочитании shift + Num3 - реализация под расскладку apple
-fn handle_print_screen(event: Event, dir: &str, pressed: &mut CombAppleBoardPress) {
+fn handle_print_screen(event: Event, dir: &Path, pressed: &mut CombAppleBoardPress) {
     match event.event_type {
         EventType::KeyPress(key) => {
             match key {
@@ -110,20 +115,19 @@ fn normalized(filename: &str) -> String {
     filename.replace(['|', '\\', ':', '/'], "")
 }
 
-fn make_screen(dir: &str) {
+fn make_screen(dir: &Path) {
     let screens: Vec<Monitor> = Monitor::all().unwrap();
 
     for screen in screens {
         let image = screen.capture_image().unwrap();
         let now: DateTime<Utc> = Utc::now();
 
-        image
-            .save(format!(
-                "{}/{}-{}.png",
-                dir,
-                now.format("%d-%m-%Y_%H_%M_%S_%f"),
-                normalized(screen.name())
-            ))
-            .unwrap();
+        let file_path = dir.join(format!(
+            "{}-{}.png",
+            now.format("%d-%m-%Y_%H_%M_%S_%f"),
+            normalized(&screen.name())
+        ));
+
+        image.save(file_path).unwrap();
     }
 }
