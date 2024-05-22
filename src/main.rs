@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use rdev::{listen, Event, EventType, Key};
 use std::env;
-use std::fs;
+use std::fs::create_dir_all;
 use xcap::Monitor;
 
 const DEFAULT_WORK_DIR: &str = "Default";
@@ -40,7 +40,7 @@ fn main() {
         .unwrap_or(&DEFAULT_WORK_DIR.to_string())
         .to_string();
 
-    init_path(&screenshots_dir);
+    let _ = init_path(&screenshots_dir);
 
     let mut pressed: CombAppleBoardPress = CombAppleBoardPress::new();
 
@@ -59,15 +59,13 @@ fn hello() {
     );
 }
 
-fn init_path(dir: &String) {
+fn init_path(dir: &String) -> std::io::Result<()> {
     // Получение текущего рабочего каталога
     let mut path = env::current_dir().unwrap();
     path.push(dir);
 
-    // Проверка существования пути в системе
-    if !path.exists() {
-        fs::create_dir_all(path).expect("Системе неудалось создать каталог");
-    }
+    create_dir_all(path)?;
+    Ok(())
 }
 
 // MetaLeft и MetaRight в сочитании shift + Num3 - реализация под расскладку apple
