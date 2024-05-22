@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rdev = {version = "0.5.3", features = ["unstable_grab"]}
-screenshots = "0.8.10"
 chrono = "0.4.38"
+rdev = {version = "0.5.3", features = ["unstable_grab"]}
+xcap = "0.0.9"

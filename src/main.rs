@@ -2,10 +2,9 @@
 
 use chrono::{DateTime, Utc};
 use rdev::{listen, Event, EventType, Key};
-use screenshots::Screen;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use xcap::Monitor;
 
 const DEFAULT_WORK_DIR: &str = "Default";
 
@@ -62,7 +61,7 @@ fn hello() {
 
 fn init_path(dir: &String) {
     // Получение текущего рабочего каталога
-    let mut path: PathBuf = env::current_dir().unwrap();
+    let mut path = env::current_dir().unwrap();
     path.push(dir);
 
     // Проверка существования пути в системе
@@ -109,18 +108,23 @@ fn handle_print_screen(event: Event, dir: &str, pressed: &mut CombAppleBoardPres
     }
 }
 
+fn normalized(filename: &str) -> String {
+    filename.replace(['|', '\\', ':', '/'], "")
+}
+
 fn make_screen(dir: &str) {
-    let screens: Vec<Screen> = Screen::all().unwrap();
+    let screens: Vec<Monitor> = Monitor::all().unwrap();
 
     for screen in screens {
-        let image = screen.capture().unwrap();
+        let image = screen.capture_image().unwrap();
         let now: DateTime<Utc> = Utc::now();
 
         image
             .save(format!(
-                "{}/{}.png",
+                "{}/{}-{}.png",
                 dir,
-                now.format("%d-%m-%Y_%H_%M_%S_%f")
+                now.format("%d-%m-%Y_%H_%M_%S_%f"),
+                normalized(screen.name())
             ))
             .unwrap();
     }
