@@ -76,7 +76,7 @@ fn handle_print_screen(event: Event, dir: &str, pressed: &mut CombAppleBoardPres
         EventType::KeyPress(key) => {
             match key {
                 Key::PrintScreen => {
-                    println!("Нажата кнопка PrintScreen");
+                    make_screen(dir);
                 }
                 Key::MetaLeft | Key::MetaRight => {
                     pressed.set_meta_pressed(true);
